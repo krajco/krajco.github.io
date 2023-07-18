@@ -1,6 +1,6 @@
-import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+// import * as THREE from './vendor/three/build/three.module.js';
+// import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+// import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
 var container = document.getElementById("container");
 var rect = container.getBoundingClientRect();
@@ -23,7 +23,7 @@ container.appendChild( renderer.domElement);
 
 camera.position.z = 5;
 
-const loader = new GLTFLoader();
+const loader = new THREE.GLTFLoader();
 
 var object;
 loader.load( '../public/che.glb'
