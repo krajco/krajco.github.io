@@ -1,92 +1,127 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+
+var container = document.getElementById("container");
+var rect = container.getBoundingClientRect();
+
+var width = rect.width;
+var height = rect.height;
+
+console.log("Width: " + width);
+console.log("Height: " + height);
+
+var aspect = width/height;
+console.log('aspect:' + aspect);
 
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+const camera = new THREE.PerspectiveCamera( 130, aspect, 0.1, 1000 );
 
 const renderer = new THREE.WebGLRenderer();
-renderer.setSize( window.innerWidth, window.innerHeight );
-document.body.appendChild( renderer.domElement );
-
-const geometry = new THREE.BoxGeometry( 1, 1, 1 );
-const material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
-// const cube = new THREE.Mesh( geometry, material );
-// scene.add( cube );
+renderer.setSize( width, height );
+container.appendChild( renderer.domElement);
 
 camera.position.z = 5;
+
+const loader = new GLTFLoader();
+
+var object;
+loader.load( '../public/che.glb'
+  , function ( gltf ) {
+    object = gltf.scene;
+    scene.add(object);
+  }
+  , undefined
+  , function ( error ) {
+	  console.error( error );
+  } 
+);
+
+var mouseDown = false;
+var lastMouseX = 0;
+var lastMouseY = 0;
+var rotation = false;
+var clickMove = false;
+
+function updateCamera() {
+  // Aktualizácia projekcie kamery
+  camera.updateProjectionMatrix();
+  
+  // Nastavenie veľkosti renderovacej oblasti
+  renderer.setSize(width, height);
+}
 
 function animate() {
 	requestAnimationFrame( animate );
 	renderer.render( scene, camera );
 }
 
-const loader = new GLTFLoader();
+function onMouseDown(event) {
+  // Prave tlacidlo
+  if (event.button === 2) {
+      rotation = true;
+      mouseDown = true;
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+  }
 
-var object;
-loader.load( '../public/che.glb', function ( gltf ) {
-    object = gltf.scene;
-    scene.add(object);
-}, undefined, function ( error ) {
-	console.error( error );
-} );
+  // Lave tlacidlo
+  if (event.button === 0) {
+      clickMove = true;
+      mouseDown = true;
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+  }
+}
+  
+function onMouseUp(event) {
+  // Lave tlacidlo
+  if (event.button === 2) {
+      mouseDown = false;
+      rotation = false;
+  }
 
+  // Prave tlacidlo
+  if (event.button === 0) {
+      mouseDown = false;
+      clickMove = false;
+  }
+}
+  
+function onMouseMove(event) {
+  if (mouseDown && rotation) {
+      var deltaX = event.clientX - lastMouseX;
+      var deltaY = event.clientY - lastMouseY;
+  
+      object.rotation.y += deltaX * 0.01;
+      object.rotation.x += deltaY * 0.01;
+  
+      lastMouseX = event.clientX;
+      lastMouseY = event.clientY;
+      console.log('Rotacia pravym klikom!');
+  }
 
-var scrollSpeed = 0.01; // Adjust this value to control the zoom speed
+  if(mouseDown && clickMove) {
+    var deltaX = event.clientX - lastMouseX;
+    var deltaY = event.clientY - lastMouseY;
+    
+    camera.position.x -= deltaX * 0.02;
+    camera.position.y += deltaY * 0.02;
 
-window.addEventListener('wheel', onScroll);
+    lastMouseX = event.clientX;
+    lastMouseY = event.clientY;
+    console.log('Snazim sa pohnut!');
+  }
+}
 
 function onScroll(event) {
-  var delta = event.deltaY;
+  camera.position.z = camera.position.z + event.deltaY * 0.02;
   updateCamera(delta);
+  console.log('Scrolujeme');
 }
-
-function updateCamera(delta) {
-    // Adjust camera position or FOV based on the scroll wheel delta
-    // You can modify the camera's position or FOV to achieve the desired zoom effect
-  
-    // Example 1: Adjust camera position along the z-axis
-    camera.position.z += delta * scrollSpeed;
-  
-    // Example 2: Modify camera FOV
-    camera.fov += delta * scrollSpeed;
-    camera.fov = Math.max(minFOV, Math.min(maxFOV, camera.fov)); // Clamp the FOV within a certain range
-    camera.updateProjectionMatrix(); // Update the camera's projection matrix after modifying the FOV
-}
-
-function onMouseDown(event) {
-    if (event.button === 2) {
-        mouseDown = true;
-        lastMouseX = event.clientX;
-        lastMouseY = event.clientY;
-    }
-  }
-  
-  function onMouseUp(event) {
-    if (event.button === 2) {
-        mouseDown = false;
-    }
-  }
-  
-  function onMouseMove(event) {
-    if (mouseDown) {
-        var deltaX = event.clientX - lastMouseX;
-        var deltaY = event.clientY - lastMouseY;
-    
-        object.rotation.y += deltaX * 0.01;
-        object.rotation.x += deltaY * 0.01;
-    
-        lastMouseX = event.clientX;
-        lastMouseY = event.clientY;
-    }
-  }
-
-var mouseDown = false;
-var lastMouseX = 0;
-var lastMouseY = 0;
-
-document.addEventListener('mousedown', onMouseDown);
-document.addEventListener('mouseup', onMouseUp);
-document.addEventListener('mousemove', onMouseMove);
-window.addEventListener('scroll', onScroll);
+container.addEventListener('mousedown', onMouseDown);
+container.addEventListener('mouseup', onMouseUp);
+container.addEventListener('mousemove', onMouseMove);
+container.addEventListener('wheel', onScroll);
 
 animate();
