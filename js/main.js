@@ -1,127 +1,129 @@
-// import * as THREE from './vendor/three/build/three.module.js';
-// import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-// import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
 
-var container = document.getElementById("container");
-var rect = container.getBoundingClientRect();
+import * as THREE from 'three';
 
-var width = rect.width;
-var height = rect.height;
+import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-console.log("Width: " + width);
-console.log("Height: " + height);
+let camera, scene, renderer, container;
 
-var aspect = width/height;
-console.log('aspect:' + aspect);
+let object;
 
-const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera( 130, aspect, 0.1, 1000 );
+init();
 
-const renderer = new THREE.WebGLRenderer();
-renderer.setSize( width, height );
-container.appendChild( renderer.domElement);
 
-camera.position.z = 5;
+function init() {
+    container = document.getElementById("container");
+    let rect = container.getBoundingClientRect();
 
-const loader = new THREE.GLTFLoader();
+    camera = new THREE.PerspectiveCamera( 45, rect.width/ rect.height, 0.1, 20 );
+    camera.position.z = 4;
 
-var object;
-loader.load( '../public/che.glb'
-  , function ( gltf ) {
-    object = gltf.scene;
-    scene.add(object);
-  }
-  , undefined
-  , function ( error ) {
-	  console.error( error );
-  } 
-);
+    // scene
 
-var mouseDown = false;
-var lastMouseX = 0;
-var lastMouseY = 0;
-var rotation = false;
-var clickMove = false;
+    scene = new THREE.Scene();
 
-function updateCamera() {
-  // Aktualizácia projekcie kamery
-  camera.updateProjectionMatrix();
+    const ambientLight = new THREE.AmbientLight( 0xffffff );
+    scene.add( ambientLight );
+
+    const pointLight = new THREE.PointLight( 0xffffff, 15 );
+    camera.add( pointLight );
+    scene.add( camera );
+    scene.background = new THREE.Color(0xabcdef);
+    // manager
+
+    function loadModel() {
+
+        object.traverse( function ( child ) {
+
+            if ( child.isMesh ) child.material.map = texture;
+
+        } );
+
+        // object.position.y = - 0.95;
+        object.scale.setScalar( 0.005 );
+        scene.add( object );
+
+        render();
+
+    }
+
+    const manager = new THREE.LoadingManager( loadModel );
+
+    // texture
+
+    const textureLoader = new THREE.TextureLoader( manager );
+    const texture = textureLoader.load( 'textures/uv_grid_opengl.jpg', render );
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    // model
+
+    function onProgress( xhr ) {
+
+        if ( xhr.lengthComputable ) {
+
+            const percentComplete = xhr.loaded / xhr.total ;
+            console.log( 'model ' + Math.round( percentComplete, 2 ) + '% downloaded' );
+
+        }
+
+    }
+
+    function onError() {}
+
+    const loader = new OBJLoader( manager );
+    loader.load( 'public/tomastest.obj', function ( obj ) {
+
+        object = obj;
+
+    }, onProgress, onError );
+
+    //
+
+    renderer = new THREE.WebGLRenderer( { antialias: true } );
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( rect.width, rect.height );
+    renderer.useLegacyLights = false;
+
+    container.appendChild( renderer.domElement );
+
+    //
+
+    const controls = new  OrbitControls( camera, renderer.domElement );
+    // controls.minDistance = 2;
+    // controls.maxDistance = 5;
+    controls.addEventListener( 'change', render );
+
+    //
+
+    container.addEventListener( 'resize', onWindowResize );
+}
+
+function onWindowResize() {
+    let rect = document.getElementById("container").getBoundingClientRect();
+
+    camera.aspect =  rect.width/rect.height;
+    camera.updateProjectionMatrix();
+    renderer.setSize( rect.width, rect.height );
+
+    const windowCenterX = rect.width / 2;
+    const windowCenterY = rect.height / 2;
   
-  // Nastavenie veľkosti renderovacej oblasti
-  renderer.setSize(width, height);
-}
-
-function animate() {
-	requestAnimationFrame( animate );
-	renderer.render( scene, camera );
-}
-
-function onMouseDown(event) {
-  // Prave tlacidlo
-  if (event.button === 2) {
-      rotation = true;
-      mouseDown = true;
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-  }
-
-  // Lave tlacidlo
-  if (event.button === 0) {
-      clickMove = true;
-      mouseDown = true;
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-  }
-}
+    // Získajte stredové súradnice objektu vzhľadom na scénu
+    const objectCenter = new THREE.Vector3();
+    const objectBoundingBox = new THREE.Box3().setFromObject(object);
+    objectBoundingBox.getCenter(objectCenter);
+    objectCenter.applyMatrix4(object.matrixWorld);
   
-function onMouseUp(event) {
-  // Lave tlacidlo
-  if (event.button === 2) {
-      mouseDown = false;
-      rotation = false;
-  }
-
-  // Prave tlacidlo
-  if (event.button === 0) {
-      mouseDown = false;
-      clickMove = false;
-  }
-}
+    // Vypočítajte posunutie objektu, aby bol vycentrovaný na stred okna
+    const xOffset = windowCenterX - objectCenter.x;
+    const yOffset = windowCenterY - objectCenter.y;
   
-function onMouseMove(event) {
-  if (mouseDown && rotation) {
-      var deltaX = event.clientX - lastMouseX;
-      var deltaY = event.clientY - lastMouseY;
-  
-      object.rotation.y += deltaX * 0.01;
-      object.rotation.x += deltaY * 0.01;
-  
-      lastMouseX = event.clientX;
-      lastMouseY = event.clientY;
-      console.log('Rotacia pravym klikom!');
-  }
+    // Posuňte objekt na nové pozície
+    object.position.x += xOffset;
+    object.position.y += yOffset;
 
-  if(mouseDown && clickMove) {
-    var deltaX = event.clientX - lastMouseX;
-    var deltaY = event.clientY - lastMouseY;
-    
-    camera.position.x -= deltaX * 0.02;
-    camera.position.y += deltaY * 0.02;
-
-    lastMouseX = event.clientX;
-    lastMouseY = event.clientY;
-    console.log('Snazim sa pohnut!');
-  }
 }
 
-function onScroll(event) {
-  camera.position.z = camera.position.z + event.deltaY * 0.02;
-  updateCamera(delta);
-  console.log('Scrolujeme');
+function render() {
+    renderer.render( scene, camera );
 }
-container.addEventListener('mousedown', onMouseDown);
-container.addEventListener('mouseup', onMouseUp);
-container.addEventListener('mousemove', onMouseMove);
-container.addEventListener('wheel', onScroll);
-
-animate();
