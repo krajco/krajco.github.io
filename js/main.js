@@ -6,12 +6,15 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 let camera, scene, renderer, container;
 
-let object;
+let object, object2;
 
 init();
 
 
 function init() {
+    const boardPath = '../public/tomastest.obj';
+    const texturePath = '../textures/uv_grid_opengl.jpg';
+
     container = document.getElementById("container");
     let rect = container.getBoundingClientRect();
 
@@ -32,51 +35,54 @@ function init() {
     // manager
 
     function loadModel() {
-
         object.traverse( function ( child ) {
-
-            if ( child.isMesh ) child.material.map = texture;
-
+            if(child instanceof THREE.Mesh) {
+                // child.material = material;
+            }
         } );
 
-        // object.position.y = - 0.95;
+        object.position.y = - 0.95;
         object.scale.setScalar( 0.005 );
         scene.add( object );
 
+        
+        object2.position.y = + 0.95;
+        object2.scale.setScalar( 0.005 );
+        scene.add( object2 );
         render();
-
     }
 
     const manager = new THREE.LoadingManager( loadModel );
 
     // texture
 
-    const textureLoader = new THREE.TextureLoader( manager );
-    const texture = textureLoader.load( 'textures/uv_grid_opengl.jpg', render );
-    texture.colorSpace = THREE.SRGBColorSpace;
+    // const textureLoader = new THREE.TextureLoader( manager );
+    const textureLoader = new THREE.TextureLoader();
+    const texture = textureLoader.load( texturePath, render );
+    console.log(texture);
+    const material = new THREE.MeshBasicMaterial({ map: texture });
+
+    // texture.colorSpace = THREE.SRGBColorSpace;
 
     // model
 
     function onProgress( xhr ) {
-
         if ( xhr.lengthComputable ) {
-
-            const percentComplete = xhr.loaded / xhr.total ;
+            const percentComplete = xhr.loaded / xhr.total * 100 ;
             console.log( 'model ' + Math.round( percentComplete, 2 ) + '% downloaded' );
-
         }
-
     }
 
     function onError() {}
 
     const loader = new OBJLoader( manager );
-    loader.load( 'public/tomastest.obj', function ( obj ) {
-
+    loader.load( boardPath , function ( obj ) {
         object = obj;
-
     }, onProgress, onError );
 
+    loader.load( boardPath , function ( obj ) {
+        object2 = obj;
+    }, onProgress, onError );
     //
 
     renderer = new THREE.WebGLRenderer( { antialias: true } );
