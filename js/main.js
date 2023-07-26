@@ -1,8 +1,8 @@
 
-import * as THREE from 'three';
+import * as THREE from './three';
 
-import { OBJLoader } from 'three/addons/loaders/OBJLoader.js';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { OBJLoader } from './three/addons/loaders/OBJLoader.js';
+import { OrbitControls } from './three/addons/controls/OrbitControls.js';
 
 let camera, scene, renderer, container;
 
