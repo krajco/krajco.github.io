@@ -43,20 +43,21 @@ function init() {
         } );
 
         object.position.y = 0;
-        object.rotation.x = -1.55;
-        object.rotation.z = 1.55;
+        object.rotation.x = deg2rad(270);
+        object.rotation.z = deg2rad(90);
         object.scale.setScalar( 0.005 );
         scene.add( object );
 
-        object2.position.z = 1.2;
+        object2.position.z = 1.112;
         object2.position.y = -0.12;
-        object2.rotation.x = 3.15;
+
+        object2.rotation.x = deg2rad(179);
         object2.scale.setScalar( 0.008 );
         scene.add( object2 );
         
         object3.position.z = -1.2;
-        object3.position.y = -0.12;
-        object3.rotation.x = -3.15;
+        object3.position.y = -0.112;
+        object3.rotation.x = deg2rad(181);
         object3.rotation.y = deg2rad(180);
         object3.scale.setScalar( 0.008 );
         scene.add( object3 );
