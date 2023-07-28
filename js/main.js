@@ -61,6 +61,8 @@ function init() {
         object3.scale.setScalar( 0.008 );
         scene.add( object3 );
         render();
+
+        onModelLoaded();
     }
 
     const manager = new THREE.LoadingManager( loadModel );
@@ -170,4 +172,10 @@ function render() {
 
 function deg2rad(deg) {
     return 0.0175 * deg;
+}
+
+function onModelLoaded() {
+    // Skrytie loading elementu
+    const loadingElement = document.getElementById("loading");
+    loadingElement.style.display = "none";
 }
